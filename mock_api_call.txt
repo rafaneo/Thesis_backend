@@ -1,0 +1,34 @@
+Register Data
+curl -X POST "127.0.0.1:8000/api/createOrder" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "email": "rafaneokleous@gmail.com",
+           "name": "John",
+           "surname": "Doe",
+           "seller" : "0x5854497c4D3eF3EAd51eb05431C39B19160bA9c5",
+           "buyer": "0xd42CD1DDB24F6F564D02c37171977e3D2e9AAff4",
+           "tokenId": "1",
+           "address": "1234 Street Rd",
+           "country": "USA",
+           "city": "New York",
+           "postalCode": "10001",
+           "unit": "Apt 101",
+           "delivery": "Standard",
+           "phone": "123-456-7890",
+           "productCost": "99.99",
+           "total": "199.98"
+        }'
+
+Get Data Back
+curl -X GET '127.0.0.1:8000/api/getOrder' \
+      -H 'Order-Number: m4ePV81yK4lQELo8rjw7mlAovaPAkoa' \
+      -H 'Content-Type: application/json'
+
+Save user Details
+curl -X POST '127.0.0.1:8000/api/saveAccountDetails' \
+-H 'Content-Type: application/json' \
+-d '{
+    "name": "John",
+    "surname": "Doe",
+    "wallet_address": "0xd42CD1DDB24F6F564D02c37171977e3D2e9AAff4"
+}'

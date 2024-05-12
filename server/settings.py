@@ -11,10 +11,27 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+import os
 
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+SERVER_EMAIL=env('SERVER_EMAIL')
+MAILING_PASS=env('MAILING_PASS')
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = SERVER_EMAIL  # Your Gmail address
+EMAIL_HOST_PASSWORD = MAILING_PASS
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -25,7 +42,7 @@ SECRET_KEY = 'django-insecure-zwaz70tu5-zilg27_4j$qy+#5kf-dibt-4-w0e2y1zg58e*aw#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -38,7 +55,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'api.apps',
+    'phonenumber_field',
+    'corsheaders',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +68,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
+    # 'corsheaders.middleware.CorsPostCsrfMiddleware',
 ]
+
+
 
 ROOT_URLCONF = 'server.urls'
 
@@ -71,7 +94,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'server.wsgi.application'
 
-
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
