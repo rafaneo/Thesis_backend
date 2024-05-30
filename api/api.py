@@ -263,6 +263,7 @@ class SaveAccountDetails(APIView):
             user = UserProfile.objects.get(wallet_address__exact=wallet_address)
             user.name = name
             user.surname = surname
+            user.storename = storename
             user.save()
             data = {
                 "message": "Account details saved successfully",
@@ -274,6 +275,7 @@ class SaveAccountDetails(APIView):
                 user = UserProfile.objects.create(
                         name = name,
                         surname = surname,
+                        storename = storename,
                         wallet_address = wallet_address
                     )
                 user.save()
