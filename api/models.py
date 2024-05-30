@@ -7,6 +7,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 class UserProfile(models.Model):
     name = models.CharField(max_length=100, null= True)
     surname = models.CharField(max_length=100, null= True)
+    storename = models.CharField(max_length=100, null= True)
     wallet_address = models.CharField(verbose_name="Ethereum Wallet Address",
         max_length=42,
         validators=[RegexValidator(regex=r'^0x[a-fA-F0-9]{40}$')],)

@@ -5,17 +5,51 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from api.models import (Order, UserProfile)
 from hashids import Hashids
+from django.db import IntegrityError
 from django.core.mail import send_mail
+from django.core.validators import validate_email
 from django.conf import settings
 import environ
 from api.contract_abi import Contract
 from web3 import Web3
-
+from enum import Enum
 env = environ.Env(
     DEBUG=(bool, False)
 )
+
+class ErrorCode(Enum):
+    INVALID_REQUEST = 1000
+    INVALID_TOKEN_ID = 1001
+    INVALID_ADDRESS = 1002
+    INVALID_EMAIL = 1003
+    INVALID_PHONE = 1004
+    INVALID_COUNTRY = 1005
+    INVALID_CITY = 1006
+    INVALID_POSTAL_CODE = 1007
+    INVALID_PRODUCT_COST = 1008
+    INVALID_TOTAL = 1009
+    INVALID_DELIVERY = 1010
+    INVALID_SELLER = 1013
+    INVALID_BUYER = 1014
+    ORDER_EXISTS = 1015
+    MISSING_REQUIRED_FIELDS = 1016
+
+def validate_address(address, city, country, postalCode):
+    address = address.strip()
+    city = city.strip()
+    country = country.strip()
+    postalCode = postalCode.strip()
+
+    if not address:
+        return False
+    return True
+
+def validate_phone(phone):
+    phone = phone.strip()
+    
 
 
 class CreateOrder(APIView):
@@ -35,11 +69,31 @@ class CreateOrder(APIView):
         phone = request.data.get("phone")
         productCost = request.data.get("productCost")
         total = request.data.get("total")
-        
-        if not email or not seller or not buyer or not tokenId or not address or not country or not city or not postalCode or not delivery or not productCost or not total:
+
+        try:
+            validate_email(email)
+        except DjangoValidationError:
             data = {
-                "message": "Missing required fields",
-                "response": False
+                "message": "Invalid email",
+                "error": ErrorCode.INVALID_EMAIL.value
+            }
+            status_code = status.HTTP_400_BAD_REQUEST
+            return Response(data, status=status_code)
+
+        if not tokenId:
+            data = {
+                "message": "Invalid tokenId",
+                "error": ErrorCode.INVALID_TOKEN_ID.value
+            }
+            status_code = status.HTTP_400_BAD_REQUEST
+            return Response(data, status=status_code)
+
+        try :
+            validate_address(address)
+        except DjangoValidationError as e:
+            data = {
+                "message": "Invalid address",
+                "error": ErrorCode.INVALID_ADDRESS.value
             }
             status_code = status.HTTP_400_BAD_REQUEST
             return Response(data, status=status_code)
@@ -64,35 +118,35 @@ class CreateOrder(APIView):
             )
             order.save()
 
-            w3 = Web3(Web3.HTTPProvider('https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4'))
+            # w3 = Web3(Web3.HTTPProvider('https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4'))
 
-            if w3.is_connected():
-                contract_address = env('CONTRACT_ADDRESS')
-                contract_owner = env('CONTRACT_OWNER')
-                wallet_private_key = env('WALLET_PRIVATE_KEY')
-
-                contract_abi = Contract.abi
-                contract = w3.eth.contract(address=contract_address, abi=contract_abi)
+            # if w3.is_connected():
+            #     contract_address = env('CONTRACT_ADDRESS')
+            #     contract_owner = env('CONTRACT_OWNER')
+            #     wallet_private_key = env('WALLET_PRIVATE_KEY')
+                 
+            #     contract_abi = Contract.abi
+            #     contract = w3.eth.contract(address=contract_address, abi=contract_abi)
                 
-                txn = contract.functions.updateOrderNumber( int(order.tokenId), order.order_number)
-                estimate_gas = txn.estimate_gas({'from': w3.to_checksum_address(contract_owner)})
-                gas_price = w3.eth.gas_price
+            #     txn = contract.functions.updateOrderNumber( int(order.tokenId), order.order_number)
+            #     estimate_gas = txn.estimate_gas({'from': w3.to_checksum_address(contract_owner)})
+            #     gas_price = w3.eth.gas_price
 
-                txn = txn.build_transaction({
-                    'chainId': 11155111,
-                    'gas': estimate_gas,
-                    'gasPrice': w3.to_wei('10', 'gwei'),
-                    'nonce': w3.eth.get_transaction_count(w3.to_checksum_address(contract_owner)),
-                    'from': w3.to_checksum_address(contract_owner),
-                })
-                
-                sign_txn = w3.eth.account.sign_transaction(txn, wallet_private_key)
-                txn_hash = w3.eth.send_raw_transaction(sign_txn.rawTransaction)
-                txn_receipt = w3.eth.wait_for_transaction_receipt(txn_hash)
-                print(txn_receipt)
+            #     txn = txn.build_transaction({
+            #         'chainId': 11155111,
+            #         'gas': estimate_gas,
+            #         'gasPrice': w3.to_wei('100', 'gwei'),
+            #         'nonce': w3.eth.get_transaction_count(w3.to_checksum_address(contract_owner)),
+            #         'from': w3.to_checksum_address(contract_owner),
+            #     })
 
-                get_token_data = contract.functions.getTokenData(int(order.tokenId)).call()
-                print(get_token_data)
+            #     sign_txn = w3.eth.account.sign_transaction(txn, wallet_private_key)
+            #     txn_hash = w3.eth.send_raw_transaction(sign_txn.rawTransaction)
+            #     txn_receipt = w3.eth.wait_for_transaction_receipt(txn_hash)
+            #     print(txn_receipt)
+
+            #     get_token_data = contract.functions.getTokenData(int(order.tokenId)).call()
+            #     print(get_token_data)
             
             data = {
                 "message": "Order created successfully",
@@ -127,6 +181,19 @@ class CreateOrder(APIView):
             }
             status_code = status.HTTP_400_BAD_REQUEST
 
+        except IntegrityError as e: 
+            print("here")
+            print(e.args[0])
+            if 'UNIQUE constraint' in e.args[0]:
+                data = {
+                    "error": "Order already exists"
+                }
+            else: 
+                data = {
+                    "error": "An error occurred"
+                }
+            status_code = status.HTTP_400_BAD_REQUEST
+
         except Exception as e:
             print(f"An error occurred: {e}")
 
@@ -142,6 +209,7 @@ class CreateOrder(APIView):
                     "error": "An error occurred"
                 }
             status_code = status.HTTP_400_BAD_REQUEST
+
         return Response(data, status=status_code)
 
 
@@ -180,11 +248,14 @@ class SaveAccountDetails(APIView):
     def post(self, request):
         name = request.data.get("name")
         surname = request.data.get("surname")
+        storename = request.data.get("storename")
         wallet_address = request.data.get("wallet_address")
+
         if not wallet_address or not name or not surname:
             data = {
                 "message": "Missing required fields",
-                "response": False
+                "response": False,
+                "error": ErrorCode.INVALID_REQUEST.value
             }
             status_code = status.HTTP_400_BAD_REQUEST
             return Response(data, status=status_code)
@@ -220,3 +291,22 @@ class SaveAccountDetails(APIView):
                 status_code = status.HTTP_400_BAD_REQUEST
         return Response(data, status=status_code)
 
+class GetAccountDetails(APIView):
+    def get(self, request):
+        wallet_address = request.headers.get("Wallet-Address")
+        try:
+            user = UserProfile.objects.get(wallet_address__exact=wallet_address)
+            data = {
+                "name": user.name,
+                "surname": user.surname,
+                "storename": user.storename,
+                "wallet_address": user.wallet_address
+            }
+            status_code = status.HTTP_200_OK
+        except:
+            data = {
+                "message": "Account not found"
+            }
+            status_code = status.HTTP_400_BAD_REQUEST
+
+        return Response(data, status=status_code)

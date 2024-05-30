@@ -639,6 +639,66 @@ class Contract:
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getMyOffers",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address payable",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address payable",
+            "name": "seller",
+            "type": "address"
+          },
+          {
+            "internalType": "address payable",
+            "name": "offer",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "orderNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "enum TideTokenNFT.NFTState",
+            "name": "state",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "curentlyListed",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct TideTokenNFT.ListedToken[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
