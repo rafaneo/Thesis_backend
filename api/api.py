@@ -296,8 +296,11 @@ class SaveAccountDetails(APIView):
 class GetAccountDetails(APIView):
     def get(self, request):
         wallet_address = request.headers.get("Wallet-Address")
+        print("here")
+        print(wallet_address)
         try:
             user = UserProfile.objects.get(wallet_address__exact=wallet_address)
+            print(user.name)
             data = {
                 "name": user.name,
                 "surname": user.surname,

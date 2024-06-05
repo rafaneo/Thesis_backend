@@ -42,7 +42,7 @@ SECRET_KEY = 'django-insecure-zwaz70tu5-zilg27_4j$qy+#5kf-dibt-4-w0e2y1zg58e*aw#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.159', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '16.16.19.83', '0.0.0.0']
 
 
 # Application definition
@@ -90,6 +90,7 @@ CORS_ALLOW_METHODS = [
 
 CORS_ALLOW_HEADERS = [ 
     'accept',
+    'Wallet-Address',
     'order-number',
     'accept-encoding',
     'authorization',
